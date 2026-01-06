@@ -1,0 +1,178 @@
+{{ define "base" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }}</title>
+    <link href="/static/css/output.css" rel="stylesheet">
+    <link href="/static/css/daisyui.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200 flex flex-col min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo/Brand -->
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="text-xl font-bold text-blue-600 dark:text-blue-400">
+                        TailwindTest
+                    </a>
+                    
+                    <!-- Nav Links -->
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
+                            Home
+                        </a>
+                        <a href="/demo" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
+                            Demo
+                        </a>
+                        <a href="/about" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
+                            About
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Right side: Dark Mode Toggle -->
+                <div class="flex items-center space-x-4">
+                    <button 
+                        onclick="toggleDarkMode()"
+                        class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-lg transition-all"
+                        title="Toggle dark mode">
+                        <span id="theme-icon">🌙</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content Area -->
+    <main class="flex-grow">
+        {{ template "content" . }}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+        <div class="container mx-auto px-4 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Company Info -->
+                <div>
+                    <h3 class="text-lg font-bold text-blue-600 dark:text-blue-400 mb-4">TailwindTest</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
+                        Building modern web applications with Go, HTMX, and Tailwind CSS.
+                    </p>
+                </div>
+                
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="/" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
+                                Home
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/demo" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
+                                Demo
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/about" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
+                                About
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Resources -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Resources</h4>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://go.dev" target="_blank" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
+                                Go Documentation
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://tailwindcss.com" target="_blank" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
+                                Tailwind CSS
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://htmx.org" target="_blank" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
+                                HTMX
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Contact/Social -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Connect</h4>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="mailto:info@example.com" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
+                                Email Us
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
+                                GitHub
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
+                                Twitter
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Copyright -->
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8 text-center">
+                <p class="text-gray-600 dark:text-gray-400 text-sm">
+                    © 2026 TailwindTest. Built with Go, HTMX, Alpine.js, and Tailwind CSS.
+                </p>
+                <p class="text-gray-500 dark:text-gray-500 text-xs mt-2">
+        Version 0.0.1 • Build 000
+    </p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // Dark mode toggle function
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                icon.textContent = '🌙';
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                icon.textContent = '☀️';
+            }
+        }
+        
+        // Default to dark mode (ignore system preference)
+(function() {
+    const theme = localStorage.getItem('theme');
+    
+    if (!theme || theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.getElementById('theme-icon').textContent = '☀️';
+    } else {
+        document.getElementById('theme-icon').textContent = '🌙';
+    }
+})();
+    </script>
+</body>
+</html>
+{{ end }}

@@ -1,0 +1,49 @@
+{{ define "about.tmpl" }}
+{{ template "base" . }}
+{{ end }}
+
+{{ define "content" }}
+<div class="container mx-auto px-4 py-12 max-w-4xl">
+    <h1 class="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-8">{{ .Title }}</h1>
+    
+    <!-- About Content -->
+    <div class="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-8 mb-8 border border-gray-200 dark:border-gray-700">
+        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Our Mission</h2>
+        <p class="text-gray-700 dark:text-gray-300 mb-4">
+            This is a demo application showcasing modern web development with Go, HTMX, Alpine.js, and Tailwind CSS.
+        </p>
+        <p class="text-gray-700 dark:text-gray-300">
+            We believe in building fast, efficient, and maintainable web applications using the right tools for the job.
+        </p>
+    </div>
+    
+    <!-- Tech Stack -->
+    <div class="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-8 border border-gray-200 dark:border-gray-700">
+        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Tech Stack</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Backend -->
+            <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Backend</h3>
+                <ul class="space-y-2 text-gray-700 dark:text-gray-300">
+                    <li>✅ Go (Golang)</li>
+                    <li>✅ Gin Web Framework</li>
+                    <li>✅ SQLC (planned)</li>
+                    <li>✅ PostgreSQL (planned)</li>
+                </ul>
+            </div>
+            
+            <!-- Frontend -->
+            <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Frontend</h3>
+                <ul class="space-y-2 text-gray-700 dark:text-gray-300">
+                    <li>✅ Tailwind CSS v4</li>
+                    <li>✅ HTMX</li>
+                    <li>✅ Alpine.js</li>
+                    <li>✅ Dark Mode Support</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}
