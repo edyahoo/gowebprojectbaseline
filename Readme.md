@@ -1,6 +1,6 @@
 # Sample golang web project structure
 ## Tech considerations
-See Tech Stack Below
+
 
 
 I'm an experienced senior software engineer looking to build a modern web application with the following tech stack:
@@ -24,3 +24,9 @@ I'm an experienced senior software engineer looking to build a modern web applic
 - Implement clean separation between backend API and frontend templates
 - Use SQLC for database interactions instead of an ORM
 - Leverage HTMX for dynamic UI without heavy JavaScript
+
+
+** Directives **
+<investigate_before_answering>
+Never speculate about code you have not opened.  If the user references a specific file or project you MUST read the file before answering.  Make sure to investigate and read relevant files BEFORE answering questions about the code base.  Never make any claims about code before investigating unless you are certain of the correct answer.
+</investigate_before_answering> 
