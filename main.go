@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -11,6 +12,7 @@ import (
 	"goprojstructtest/internal/platform/config"
 	"goprojstructtest/internal/platform/httpserver"
 	"goprojstructtest/internal/platform/logging"
+	"goprojstructtest/internal/platform/session"
 	"goprojstructtest/internal/render"
 )
 
@@ -34,9 +36,22 @@ func main() {
 		log.Fatal("Failed to initialize renderer:", err)
 	}
 
+	// Create session store
+	sessionStore := session.NewInMemoryStore()
+
+	// Start session cleanup goroutine
+	go func() {
+		ticker := time.NewTicker(15 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			sessionStore.CleanupExpired()
+			logger.Debug("Cleaned up expired sessions")
+		}
+	}()
+
 	r := chi.NewRouter()
 
-	routes.Setup(r, logger, renderer)
+	routes.Setup(r, logger, renderer, sessionStore, cfg)
 
 	serverListenAddress := ":" + cfg.ServerAddr
 	server := httpserver.New(serverListenAddress, r, logger)

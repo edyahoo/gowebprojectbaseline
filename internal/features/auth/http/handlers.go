@@ -2,17 +2,25 @@
 
 import (
 	"net/http"
+	"time"
 
+	"goprojstructtest/internal/domain"
+	"goprojstructtest/internal/platform/config"
+	"goprojstructtest/internal/platform/session"
 	"goprojstructtest/internal/render"
 )
 
 type Handler struct {
 	renderer *render.Renderer
+	store    session.SessionStore
+	config   *config.Config
 }
 
-func NewHandler(renderer *render.Renderer) *Handler {
+func NewHandler(renderer *render.Renderer, store session.SessionStore, cfg *config.Config) *Handler {
 	return &Handler{
 		renderer: renderer,
+		store:    store,
+		config:   cfg,
 	}
 }
 
@@ -21,7 +29,8 @@ func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
 		"Title":        "Login",
 		"ShowError":    false,
 		"ErrorMessage": "",
-		"Email":        "",
+		"Email":        "admin@example.com",
+		"Password":     "password",
 	})
 }
 
@@ -35,7 +44,30 @@ func (h *Handler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 
 	if email == "admin@example.com" && password == "password" {
-		http.Redirect(w, r, "/demo", http.StatusFound)
+		// Create session
+		sessionID, err := h.store.Create(
+			domain.UserID(1),
+			domain.RoleAdmin,
+			domain.TenantID(1),
+			time.Duration(h.config.SessionDurationMinutes)*time.Minute,
+		)
+		if err != nil {
+			http.Error(w, "Failed to create session", http.StatusInternalServerError)
+			return
+		}
+
+		// Set secure cookie
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session_id",
+			Value:    sessionID,
+			Path:     "/",
+			MaxAge:   h.config.SessionDurationMinutes * 60,
+			HttpOnly: true,
+			Secure:   h.config.IsProduction(),
+			SameSite: http.SameSiteLaxMode,
+		})
+
+		http.Redirect(w, r, "/admin", http.StatusFound)
 		return
 	}
 
@@ -62,5 +94,21 @@ func (h *Handler) ForgotPasswordSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err == nil {
+		h.store.Delete(cookie.Value)
+	}
+
+	// Clear cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   h.config.IsProduction(),
+		SameSite: http.SameSiteLaxMode,
+	})
+
 	http.Redirect(w, r, "/login", http.StatusFound)
 }

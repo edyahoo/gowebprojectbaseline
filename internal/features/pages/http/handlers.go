@@ -23,13 +23,13 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) About(w http.ResponseWriter, r *http.Request) {
-	h.renderer.HTML(w, http.StatusOK, "about.tmpl", map[string]any{
+	h.renderer.HTML(w, http.StatusOK, "base.tmpl", map[string]any{
 		"Title": "About",
 	})
 }
 
 func (h *Handler) Demo(w http.ResponseWriter, r *http.Request) {
-	h.renderer.HTML(w, http.StatusOK, "demo.tmpl", map[string]any{
+	h.renderer.HTML(w, http.StatusOK, "base.tmpl", map[string]any{
 		"Title": "Demo",
 	})
 }

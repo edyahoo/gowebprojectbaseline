@@ -1,7 +1,9 @@
 ﻿package render
 
 import (
+	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 )
@@ -11,7 +13,8 @@ type Renderer struct {
 }
 
 func New() (*Renderer, error) {
-	tmpl := template.New("")
+	// Collect all template files
+	var allFiles []string
 
 	// Load layout templates
 	layoutPattern := filepath.Join("web", "templates", "layouts", "*.tmpl")
@@ -19,11 +22,7 @@ func New() (*Renderer, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(layouts) > 0 {
-		if _, err := tmpl.ParseFiles(layouts...); err != nil {
-			return nil, err
-		}
-	}
+	allFiles = append(allFiles, layouts...)
 
 	// Load page templates
 	pagePattern := filepath.Join("web", "templates", "pages", "*.tmpl")
@@ -31,11 +30,31 @@ func New() (*Renderer, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(pages) > 0 {
-		if _, err := tmpl.ParseFiles(pages...); err != nil {
-			return nil, err
-		}
+	allFiles = append(allFiles, pages...)
+
+	// Load .html page templates
+	pageHTMLPattern := filepath.Join("web", "templates", "pages", "*.html")
+	pagesHTML, err := filepath.Glob(pageHTMLPattern)
+	if err != nil {
+		return nil, err
 	}
+	allFiles = append(allFiles, pagesHTML...)
+
+	// Load page templates from subdirectories
+	pageSubdirPattern := filepath.Join("web", "templates", "pages", "*", "*.tmpl")
+	pagesSubdir, err := filepath.Glob(pageSubdirPattern)
+	if err != nil {
+		return nil, err
+	}
+	allFiles = append(allFiles, pagesSubdir...)
+
+	// Load .html page templates from subdirectories
+	pageSubdirHTMLPattern := filepath.Join("web", "templates", "pages", "*", "*.html")
+	pagesSubdirHTML, err := filepath.Glob(pageSubdirHTMLPattern)
+	if err != nil {
+		return nil, err
+	}
+	allFiles = append(allFiles, pagesSubdirHTML...)
 
 	// Load partial templates (optional - may be empty)
 	partialPattern := filepath.Join("web", "templates", "partials", "*.tmpl")
@@ -43,10 +62,18 @@ func New() (*Renderer, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(partials) > 0 {
-		if _, err := tmpl.ParseFiles(partials...); err != nil {
-			return nil, err
-		}
+	allFiles = append(allFiles, partials...)
+
+	// Parse all templates together
+	tmpl, err := template.ParseFiles(allFiles...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Debug: Log all loaded template names
+	for _, t := range tmpl.Templates() {
+		// Only log in debug builds or controlled by env var if desired
+		_ = t.Name() // Available for debugging
 	}
 
 	return &Renderer{templates: tmpl}, nil
@@ -57,7 +84,25 @@ func (r *Renderer) Template() *template.Template {
 }
 
 func (r *Renderer) HTML(w http.ResponseWriter, status int, name string, data any) error {
+	slog.Info("Rendering template", "name", name)
+
+	// Debug: Check if template exists
+	tmpl := r.templates.Lookup(name)
+	if tmpl == nil {
+		slog.Error("Template not found", "name", name)
+		// List available templates
+		slog.Info("Available templates:")
+		for _, t := range r.templates.Templates() {
+			slog.Info("  - " + t.Name())
+		}
+		return fmt.Errorf("template not found: %s", name)
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	return r.templates.ExecuteTemplate(w, name, data)
+	err := r.templates.ExecuteTemplate(w, name, data)
+	if err != nil {
+		slog.Error("Template execution failed", "name", name, "error", err)
+	}
+	return err
 }

@@ -1,4 +1,3 @@
-{{ define "base" }}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,6 +36,16 @@
                 
                 <!-- Right side: Dark Mode Toggle -->
                 <div class="flex items-center space-x-4">
+                    <!-- Logout Button (only shown when logged in) -->
+                    <form action="/logout" method="POST" class="inline">
+                        <button 
+                            type="submit"
+                            class="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white px-4 py-2 rounded-lg transition-all font-medium"
+                            title="Logout">
+                            Logout
+                        </button>
+                    </form>
+                    
                     <button 
                         onclick="toggleDarkMode()"
                         class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-lg transition-all"
@@ -50,7 +59,9 @@
     
     <!-- Main Content Area -->
     <main class="flex-grow">
-        {{ template "content" . }}
+        {{ block "content" . }}
+        <p>Default content</p>
+        {{ end }}
     </main>
     
     <!-- Footer -->
@@ -175,4 +186,3 @@
     </script>
 </body>
 </html>
-{{ end }}

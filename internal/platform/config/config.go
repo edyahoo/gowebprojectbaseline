@@ -10,14 +10,19 @@ import (
 )
 
 type Config struct {
-	ServerAddr string
-	DBHost     string
-	DBPort     int
-	DBUser     string
-	DBPassword string
-	DBName     string
-	LogLevel   string
-	Env        string
+	ServerAddr             string
+	DBHost                 string
+	DBPort                 int
+	DBUser                 string
+	DBPassword             string
+	DBName                 string
+	LogLevel               string
+	Env                    string
+	SessionDurationMinutes int
+}
+
+func (c *Config) IsProduction() bool {
+	return c.Env == "production"
 }
 
 /*
@@ -98,14 +103,15 @@ func Load() *Config {
 	slog.Info("Current working directory", "cwd", cwd)
 	_ = LoadDotEnv(".env") // ignore missing file; returns nil if not present
 	return &Config{
-		ServerAddr: getEnv("SERVER_ADDR", "8080"),
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnvAsInt("DB_PORT", 5432),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", ""),
-		DBName:     getEnv("DB_NAME", "tailwindtest"),
-		LogLevel:   getEnv("LOG_LEVEL", "debug"),
-		Env:        getEnv("ENV", "development"),
+		ServerAddr:             getEnv("SERVER_ADDR", "8080"),
+		DBHost:                 getEnv("DB_HOST", "localhost"),
+		DBPort:                 getEnvAsInt("DB_PORT", 5432),
+		DBUser:                 getEnv("DB_USER", "postgres"),
+		DBPassword:             getEnv("DB_PASSWORD", ""),
+		DBName:                 getEnv("DB_NAME", "tailwindtest"),
+		LogLevel:               getEnv("LOG_LEVEL", "debug"),
+		Env:                    getEnv("ENV", "development"),
+		SessionDurationMinutes: getEnvAsInt("SESSION_DURATION_MINUTES", 60),
 	}
 }
 

@@ -7,6 +7,7 @@ type User struct {
 	TenantID  TenantID
 	Email     string
 	Name      string
+	Role      Role
 	IsActive  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
