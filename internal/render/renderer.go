@@ -2,6 +2,7 @@
 
 import (
 	"html/template"
+	"net/http"
 	"path/filepath"
 )
 
@@ -53,4 +54,10 @@ func New() (*Renderer, error) {
 
 func (r *Renderer) Template() *template.Template {
 	return r.templates
+}
+
+func (r *Renderer) HTML(w http.ResponseWriter, status int, name string, data any) error {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	return r.templates.ExecuteTemplate(w, name, data)
 }

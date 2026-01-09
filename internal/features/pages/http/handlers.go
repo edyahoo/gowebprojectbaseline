@@ -3,29 +3,33 @@
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"goprojstructtest/internal/render"
 )
 
-type Handler struct{}
-
-func NewHandler() *Handler {
-	return &Handler{}
+type Handler struct {
+	renderer *render.Renderer
 }
 
-func (h *Handler) Index(c *gin.Context) {
-	c.HTML(http.StatusOK, "index.tmpl", gin.H{
+func NewHandler(renderer *render.Renderer) *Handler {
+	return &Handler{
+		renderer: renderer,
+	}
+}
+
+func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
+	h.renderer.HTML(w, http.StatusOK, "index.tmpl", map[string]any{
 		"Title": "Home",
 	})
 }
 
-func (h *Handler) About(c *gin.Context) {
-	c.HTML(http.StatusOK, "about.tmpl", gin.H{
+func (h *Handler) About(w http.ResponseWriter, r *http.Request) {
+	h.renderer.HTML(w, http.StatusOK, "about.tmpl", map[string]any{
 		"Title": "About",
 	})
 }
 
-func (h *Handler) Demo(c *gin.Context) {
-	c.HTML(http.StatusOK, "demo.tmpl", gin.H{
+func (h *Handler) Demo(w http.ResponseWriter, r *http.Request) {
+	h.renderer.HTML(w, http.StatusOK, "demo.tmpl", map[string]any{
 		"Title": "Demo",
 	})
 }

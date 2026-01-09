@@ -1,6 +1,6 @@
 ﻿package http
 
-import "github.com/gin-gonic/gin"
+import "net/http"
 
 type Handler struct {
 }
@@ -9,14 +9,14 @@ func NewHandler() *Handler {
 	return &Handler{}
 }
 
-func (h *Handler) List(c *gin.Context) {
+func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 }
 
-func (h *Handler) Create(c *gin.Context) {
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
-func (h *Handler) Update(c *gin.Context) {
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
-func (h *Handler) Delete(c *gin.Context) {
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 }

@@ -5,7 +5,7 @@ import (
 	"log"
 	"log/slog"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 
 	"goprojstructtest/internal/http/routes"
 	"goprojstructtest/internal/platform/config"
@@ -34,14 +34,9 @@ func main() {
 		log.Fatal("Failed to initialize renderer:", err)
 	}
 
-	if cfg.Env == "production" {
-		gin.SetMode(gin.ReleaseMode)
-	}
+	r := chi.NewRouter()
 
-	r := gin.New()
-	r.SetHTMLTemplate(renderer.Template())
-
-	routes.Setup(r, logger)
+	routes.Setup(r, logger, renderer)
 
 	serverListenAddress := ":" + cfg.ServerAddr
 	server := httpserver.New(serverListenAddress, r, logger)

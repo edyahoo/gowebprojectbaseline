@@ -2,37 +2,41 @@
 
 import (
 	"log/slog"
+	"net/http"
 
-	"github.com/gin-gonic/gin"
-	
+	"github.com/go-chi/chi/v5"
+
 	authhttp "goprojstructtest/internal/features/auth/http"
 	pageshttp "goprojstructtest/internal/features/pages/http"
 	"goprojstructtest/internal/http/middleware"
+	"goprojstructtest/internal/render"
 )
 
-func Setup(r *gin.Engine, logger *slog.Logger) {
+func Setup(r chi.Router, logger *slog.Logger, renderer *render.Renderer) {
 	r.Use(middleware.Logger(logger))
 	r.Use(middleware.Recovery(logger))
 
-	r.Static("/static", "./web/static")
+	// Serve static files
+	fileServer := http.FileServer(http.Dir("./web/static"))
+	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
-	public := r.Group("")
-	{
-		authHandler := authhttp.NewHandler()
-		public.GET("/login", authHandler.LoginPage)
-		public.POST("/login", authHandler.LoginSubmit)
-		public.GET("/forgot-password", authHandler.ForgotPasswordPage)
-		public.POST("/forgot-password", authHandler.ForgotPasswordSubmit)
-		public.POST("/logout", authHandler.Logout)
+	// Public routes
+	authHandler := authhttp.NewHandler(renderer)
+	r.Get("/login", authHandler.LoginPage)
+	r.Post("/login", authHandler.LoginSubmit)
+	r.Get("/forgot-password", authHandler.ForgotPasswordPage)
+	r.Post("/forgot-password", authHandler.ForgotPasswordSubmit)
+	r.Post("/logout", authHandler.Logout)
 
-		pageHandler := pageshttp.NewHandler()
-		public.GET("/", pageHandler.Index)
-		public.GET("/about", pageHandler.About)
-		public.GET("/demo", pageHandler.Demo)
-	}
+	pageHandler := pageshttp.NewHandler(renderer)
+	r.Get("/", authHandler.LoginPage)
+	r.Get("/about", pageHandler.About)
+	r.Get("/demo", pageHandler.Demo)
+	r.Get("/index", pageHandler.Index)
 
-	protected := r.Group("")
-	protected.Use(middleware.RequireAuth())
-	{
-	}
+	// Protected routes
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequireAuth())
+		// Add protected routes here
+	})
 }

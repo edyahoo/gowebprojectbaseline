@@ -2,28 +2,41 @@
 
 import (
 	"log/slog"
+	"net/http"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
-func Logger(logger *slog.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		path := c.Request.URL.Path
-		method := c.Request.Method
+type responseWriter struct {
+	http.ResponseWriter
+	status int
+}
 
-		c.Next()
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.status = code
+	rw.ResponseWriter.WriteHeader(code)
+}
 
-		duration := time.Since(start)
-		status := c.Writer.Status()
+func Logger(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			path := r.URL.Path
+			method := r.Method
 
-		logger.Info("HTTP request",
-			"method", method,
-			"path", path,
-			"status", status,
-			"duration", duration,
-			"ip", c.ClientIP(),
-		)
+			wrapped := &responseWriter{ResponseWriter: w, status: http.StatusOK}
+
+			next.ServeHTTP(wrapped, r)
+
+			duration := time.Since(start)
+			status := wrapped.status
+
+			logger.Info("HTTP request",
+				"method", method,
+				"path", path,
+				"status", status,
+				"duration", duration,
+				"ip", r.RemoteAddr,
+			)
+		})
 	}
 }
