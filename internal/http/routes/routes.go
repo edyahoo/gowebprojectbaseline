@@ -50,5 +50,7 @@ func Setup(r chi.Router, logger *slog.Logger, renderer *render.Renderer, store *
 		r.Use(middleware.RequireRole(domain.RoleAdmin, logger))
 		r.Get("/admin", adminHandler.Dashboard)
 		r.Get("/admin/", adminHandler.Dashboard)
+		r.Get("/admin/dashboard", adminHandler.Dashboard)
+		r.Get("/admin/test.html", adminHandler.TestHTML)
 	})
 }

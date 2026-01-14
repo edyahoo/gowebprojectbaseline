@@ -6,13 +6,28 @@ import (
 	"log/slog"
 	"net/http"
 	"path/filepath"
+
+	"goprojstructtest/internal/platform/config"
 )
 
 type Renderer struct {
 	templates *template.Template
+	config    *config.Config
 }
 
-func New() (*Renderer, error) {
+func New(cfg *config.Config) (*Renderer, error) {
+	tmpl, err := loadTemplates()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Renderer{
+		templates: tmpl,
+		config:    cfg,
+	}, nil
+}
+
+func loadTemplates() (*template.Template, error) {
 	// Collect all template files
 	var allFiles []string
 
@@ -76,7 +91,7 @@ func New() (*Renderer, error) {
 		_ = t.Name() // Available for debugging
 	}
 
-	return &Renderer{templates: tmpl}, nil
+	return tmpl, nil
 }
 
 func (r *Renderer) Template() *template.Template {
@@ -84,7 +99,18 @@ func (r *Renderer) Template() *template.Template {
 }
 
 func (r *Renderer) HTML(w http.ResponseWriter, status int, name string, data any) error {
-	slog.Info("Rendering template", "name", name)
+	slog.Info("Rendering template", "name", name, "env", r.config.Env)
+
+	// In development mode, reload templates on each request for hot-reload
+	if r.config.IsDevelopment() {
+		slog.Debug("Development mode: reloading templates")
+		tmpl, err := loadTemplates()
+		if err != nil {
+			slog.Error("Failed to reload templates", "error", err)
+			return fmt.Errorf("failed to reload templates: %w", err)
+		}
+		r.templates = tmpl
+	}
 
 	// Debug: Check if template exists
 	tmpl := r.templates.Lookup(name)

@@ -25,6 +25,10 @@ func (c *Config) IsProduction() bool {
 	return c.Env == "production"
 }
 
+func (c *Config) IsDevelopment() bool {
+	return c.Env == "development"
+}
+
 /*
 	func init() {
 		// Bootstrap logger: always DEBUG, simple, early

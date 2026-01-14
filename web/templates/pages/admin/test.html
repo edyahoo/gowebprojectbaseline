@@ -1,10 +1,9 @@
-{{ define "dashboard.tmpl" }}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Title }}</title>
+    <title>Dashboard - EFTG v0.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <style>
@@ -62,7 +61,7 @@
                         <div x-show="open" x-collapse class="pl-11 space-y-1">
                             <a href="#" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">Overview</a>
                             <a href="#" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">Reports</a>
-
+                           
                             <a href="#" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">Statistics</a>
                         </div>
                     </div>
@@ -94,8 +93,29 @@
                             <a href="#" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">Calendar</a>
                             <a href="#" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">Invoice</a>
                         </div>
-                    </div>                
-                
+                    </div>
+
+                    
+                    <!-- Components (Collapsible) -->
+                    <div x-data="{ open: false }" class="space-y-1">
+                        <button @click="open = !open" class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                                Components
+                            </div>
+                            <svg :class="open ? 'rotate-90' : ''" class="w-4 h-4 transition-transform text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="open" x-collapse class="pl-11 space-y-1">
+                            <a href="#" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">Cards</a>
+                            <a href="#" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">Tables</a>
+                            <a href="#" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">Forms</a>
+                        </div>
+                    </div>
+
                     <!-- Settings -->
                     <a href="#" class="flex items-center px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,7 +172,7 @@
                     <div class="flex-1 flex items-center justify-between ml-4 lg:ml-0">
                         <div class="flex-1 max-w-lg">
                             <div class="relative">
-
+                                
                             </div>
                         </div>
 
@@ -174,7 +194,7 @@
             <!-- Main Content Area -->
             <main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
                 <!-- Welcome Banner -->
-
+                
 
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -439,4 +459,3 @@
     </script>
 </body>
 </html>
-{{ end }}

@@ -31,7 +31,7 @@ func main() {
 		"config", cfg,
 	)
 
-	renderer, err := render.New()
+	renderer, err := render.New(cfg)
 	if err != nil {
 		log.Fatal("Failed to initialize renderer:", err)
 	}
