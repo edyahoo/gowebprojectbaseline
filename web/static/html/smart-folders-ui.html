@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Folders - AWS File Transfer Governance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        .tree-item {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.15s;
+            border-radius: 0.375rem;
+            margin: 0.125rem 0;
+        }
+        
+        .tree-item:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .tree-item.selected {
+            background-color: #dbeafe;
+            border-left: 3px solid #3b82f6;
+            padding-left: calc(0.75rem - 3px);
+        }
+        
+        .tree-indent {
+            padding-left: 1.5rem;
+        }
+        
+        .policy-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 9999px;
+        }
+        
+        .policy-enabled {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .policy-disabled {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        .preview-box {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .metric-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 3rem;
+            height: 1.5rem;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 1.5rem;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 1.25rem;
+            width: 1.25rem;
+            left: 0.125rem;
+            bottom: 0.125rem;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #10b981;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(1.5rem);
+        }
+        
+        .collapsible-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 1rem;
+            background: #f9fafb;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .section-header:hover {
+            background: #f3f4f6;
+        }
+        
+        .section-content {
+            padding: 1.5rem;
+        }
+        
+        .chevron {
+            transition: transform 0.2s;
+        }
+        
+        .chevron.open {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="smartFolders()">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div class="px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-xl font-bold text-gray-900">Smart Folders</h1>
+                    <span class="text-sm text-gray-500">Automated file operations across S3</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-600 hover:text-gray-900">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                    </button>
+                    <button class="text-gray-600 hover:text-gray-900">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content: Master-Detail Layout -->
+    <div class="flex h-[calc(100vh-73px)]">
+        <!-- LEFT PANEL: Bucket & Folder Tree -->
+        <aside class="w-80 bg-white border-r border-gray-200 overflow-y-auto">
+            <div class="p-4 border-b border-gray-200">
+                <h2 class="text-sm font-semibold text-gray-700 mb-3">Buckets & Folders</h2>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        placeholder="Search buckets or prefixes..." 
+                        x-model="searchQuery"
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Tree View -->
+            <div class="p-2">
+                <!-- Bucket 1: mft-inbound-prod -->
+                <div>
+                    <div class="flex items-center text-sm font-medium text-gray-700 p-2">
+                        <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                        mft-inbound-prod
+                    </div>
+                    
+                    <!-- Folders under bucket -->
+                    <div class="tree-indent">
+                        <div class="tree-item">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center text-sm">
+                                    <span class="mr-2">📁</span>
+                                    <span>TradingPartnerA/</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="tree-indent">
+                            <div 
+                                class="tree-item selected" 
+                                @click="selectFolder('mft-inbound-prod', 'TradingPartnerA/inbound/')">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center text-sm">
+                                        <span class="mr-2">📁</span>
+                                        <span class="font-medium">inbound/</span>
+                                    </div>
+                                    <div class="flex items-center space-x-1">
+                                        <span class="policy-badge policy-enabled">⚙️ Copy</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="tree-item">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center text-sm">
+                                        <span class="mr-2">📁</span>
+                                        <span>archive/</span>
+                                    </div>
+                                    <span class="policy-badge policy-disabled">⏸️ Disabled</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="tree-item">
+                            <div class="flex items-center text-sm">
+                                <span class="mr-2">📁</span>
+                                <span>TradingPartnerB/</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bucket 2: mft-processing-prod -->
+                <div class="mt-4">
+                    <div class="flex items-center text-sm font-medium text-gray-700 p-2">
+                        <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                        mft-processing-prod
+                    </div>
+                </div>
+
+                <!-- Bucket 3: mft-archive-prod -->
+                <div class="mt-4">
+                    <div class="flex items-center text-sm font-medium text-gray-700 p-2">
+                        <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                        mft-archive-prod
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RIGHT PANEL: Smart Folder Configuration -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="max-w-5xl mx-auto p-8">
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">
+                                Smart Folder Configuration
+                            </h2>
+                            <div class="flex items-center space-x-2 text-sm">
+                                <span class="font-mono text-gray-600">s3://mft-inbound-prod/TradingPartnerA/inbound/</span>
+                                <button class="text-blue-600 hover:text-blue-700">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">Last Modified: 2026-01-13 14:32 UTC</div>
+                        </div>
+                        
+                        <!-- Enable/Disable Toggle -->
+                        <div class="flex items-center space-x-3">
+                            <span class="text-sm font-medium text-gray-700">Smart Folder</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" x-model="policyEnabled">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="text-sm font-semibold" :class="policyEnabled ? 'text-green-600' : 'text-gray-400'" x-text="policyEnabled ? 'Enabled' : 'Disabled'"></span>
+                        </div>
+                    </div>
+
+                    <!-- Status Alert -->
+                    <div x-show="policyEnabled" class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-green-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-green-800">Policy Active</p>
+                                <p class="text-sm text-green-700 mt-1">Files uploaded to this folder will be automatically processed according to the policy below.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div x-show="!policyEnabled" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-yellow-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-yellow-800">Policy Disabled</p>
+                                <p class="text-sm text-yellow-700 mt-1">Events are being logged but no automated actions are executing.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SmartMove Policy Section -->
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">SmartMove Policy</h3>
+                        
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Action Type</label>
+                            <select class="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option selected>Copy</option>
+                                <option>Move</option>
+                                <option>Delete</option>
+                                <option>Archive</option>
+                            </select>
+                        </div>
+
+                        <!-- Intent Box -->
+                        <div class="info-box">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-semibold text-blue-900 mb-1">Intent</p>
+                                    <p class="text-sm text-blue-800">Create a duplicate object at a destination when a file is finalized in this folder.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Source (Read-Only) -->
+                    <div class="p-6 bg-gray-50 border-b border-gray-200">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-4">Source</h4>
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div class="text-gray-600 font-medium">Bucket:</div>
+                                <div class="col-span-2 font-mono text-gray-900">mft-inbound-prod</div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div class="text-gray-600 font-medium">Prefix:</div>
+                                <div class="col-span-2 font-mono text-gray-900">TradingPartnerA/inbound/</div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div class="text-gray-600 font-medium">Scope:</div>
+                                <div class="col-span-2 text-gray-700">All objects under this prefix</div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3 italic">Source is derived from folder selection and cannot be edited here.</p>
+                    </div>
+
+                    <!-- Destination Configuration -->
+                    <div class="p-6 border-b border-gray-200">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-4">Destination</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Bucket *</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option selected>mft-processing-prod</option>
+                                    <option>mft-archive-prod</option>
+                                    <option>mft-backup-prod</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Prefix</label>
+                                <input 
+                                    type="text" 
+                                    value="TradingPartnerA/processing/" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <p class="text-xs text-gray-500 mt-1">Files will be copied to this path in the destination bucket</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                    <span class="ml-2 text-sm text-gray-700">Maintain original filename</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                    <span class="ml-2 text-sm text-gray-700">Append timestamp to filename</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                    <span class="ml-2 text-sm text-gray-700">Preserve directory structure</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Copy Behavior Options -->
+                    <div class="p-6 border-b border-gray-200">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-4">Copy Behavior</h4>
+                        
+                        <div class="space-y-6">
+                            <!-- Metadata & Tags -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Metadata & Tags</label>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Preserve object metadata</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Preserve object tags</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Ownership & ACL -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Ownership & ACL</label>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="ownership" checked class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Bucket owner full control</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="ownership" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Default object ACL</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Storage Class -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Storage Class</label>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="storage" checked class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Inherit from source</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="storage" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">STANDARD</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="storage" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">INTELLIGENT_TIERING</span>
+                                    </label>
+                                    <label class="flex items-center opacity-50 cursor-not-allowed">
+                                        <input type="radio" name="storage" disabled class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-500">GLACIER (disabled for Copy)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Encryption -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Encryption</label>
+                                <div class="space-y-3">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="encryption" checked class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Keep source encryption</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="encryption" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Force SSE-S3</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="encryption" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Force SSE-KMS</span>
+                                    </label>
+                                    <div class="ml-6 mt-2 hidden">
+                                        <label class="block text-sm text-gray-700 mb-1">KMS Key</label>
+                                        <select class="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                                            <option>alias/mft-processing-key</option>
+                                            <option>alias/aws/s3</option>
+                                        </select>
+                                        <p class="text-xs text-yellow-600 mt-1">⚠️ Cross-account KMS keys require additional IAM permissions</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Overwrite Policy -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                    Overwrite Policy
+                                    <button class="ml-2 text-gray-400 hover:text-gray-600" title="Duplicate events and retries are handled idempotently">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </button>
+                                </label>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="overwrite" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Never overwrite (fail if exists)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="overwrite" checked class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Overwrite if exists</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="overwrite" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Only if destination does not exist</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expected Outputs -->
+                    <div class="p-6 bg-green-50 border-b border-gray-200">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-4">Expected Outputs</h4>
+                        <div class="space-y-2">
+                            <div class="flex items-center text-sm text-gray-700">
+                                <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Destination object created
+                            </div>
+                            <div class="flex items-center text-sm text-gray-700">
+                                <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Source object unchanged
+                            </div>
+                            <div class="flex items-center text-sm text-gray-700">
+                                <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Action logged for audit
+                            </div>
+                            <div class="flex items-center text-sm text-gray-700">
+                                <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Idempotent execution guaranteed
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="p-6">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-4">Execution Preview</h4>
+                        <div class="preview-box">
+                            <div class="mb-3">
+                                <div class="text-xs text-gray-600 mb-1">If file arrives:</div>
+                                <div class="text-sm font-semibold text-gray-900">s3://mft-inbound-prod/TradingPartnerA/inbound/file1.csv</div>
+                            </div>
+                            <div class="flex items-center justify-center my-3">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-600 mb-1">Then create:</div>
+                                <div class="text-sm font-semibold text-green-700">s3://mft-processing-prod/TradingPartnerA/processing/file1.csv</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Execution Summary (Collapsible) -->
+                <div class="collapsible-section mb-6" x-data="{ open: false }">
+                    <div class="section-header" @click="open = !open">
+                        <span>Execution Summary (Last 24h)</span>
+                        <svg class="w-5 h-5 chevron" :class="{ 'open': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div x-show="open" x-collapse>
+                        <div class="section-content">
+                            <div class="grid grid-cols-4 gap-4 mb-6">
+                                <div class="metric-card">
+                                    <div class="text-2xl font-bold text-gray-900">1,284</div>
+                                    <div class="text-sm text-gray-600 mt-1">Files Processed</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="text-2xl font-bold text-green-600">1,284</div>
+                                    <div class="text-sm text-gray-600 mt-1">Successful Copies</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="text-2xl font-bold text-gray-400">0</div>
+                                    <div class="text-sm text-gray-600 mt-1">Failures</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="text-2xl font-bold text-blue-600">1.2s</div>
+                                    <div class="text-sm text-gray-600 mt-1">Avg Processing Time</div>
+                                </div>
+                            </div>
+                            <div class="flex space-x-3">
+                                <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                                    View Recent Executions
+                                </button>
+                                <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                                    View Logs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-between items-center pt-6 border-t border-gray-200">
+                    <button class="px-6 py-2 text-gray-700 hover:text-gray-900 font-medium">
+                        Cancel
+                    </button>
+                    <div class="flex space-x-3">
+                        <button class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                            Test Policy
+                        </button>
+                        <button class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function smartFolders() {
+            return {
+                searchQuery: '',
+                policyEnabled: true,
+                selectedBucket: 'mft-inbound-prod',
+                selectedPrefix: 'TradingPartnerA/inbound/',
+                
+                selectFolder(bucket, prefix) {
+                    this.selectedBucket = bucket;
+                    this.selectedPrefix = prefix;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
